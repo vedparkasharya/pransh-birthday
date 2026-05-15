@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 230 30% 6%;
+    --foreground: 40 30% 94%;
+    --card: 230 30% 8%;
+    --card-foreground: 40 30% 94%;
+    --popover: 230 30% 8%;
+    --popover-foreground: 40 30% 94%;
+    --primary: 42 50% 54%;
+    --primary-foreground: 230 30% 6%;
+    --secondary: 230 20% 14%;
+    --secondary-foreground: 40 30% 94%;
+    --muted: 230 20% 14%;
+    --muted-foreground: 40 10% 60%;
+    --accent: 42 50% 54%;
+    --accent-foreground: 230 30% 6%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 42 50% 54% / 0.25;
+    --input: 230 20% 14%;
+    --ring: 42 50% 54%;
+    --radius: 0.75rem;
+  }
+
+  body {
+    @apply bg-[#0B0D17] text-[#F5F0E8];
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+
+  html {
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+  }
+}
+
+@layer base {
+  .font-display {
+    font-family: 'Playfair Display', serif;
+  }
+  .font-mono {
+    font-family: 'Space Mono', monospace;
+  }
+}
+
+@layer components {
+  .text-gradient {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF6B6B 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gold-border {
+    border: 1px solid rgba(201, 168, 76, 0.25);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(201, 168, 76, 0.25);
+    border-radius: 24px;
+  }
+
+  .btn-gold {
+    background: linear-gradient(135deg, #C9A84C 0%, #E8C96A 100%);
+    color: #0B0D17;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    transition: all 0.3s ease-out;
+  }
+  .btn-gold:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 32px rgba(201, 168, 76, 0.3);
+  }
+
+  .section-entrance {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
