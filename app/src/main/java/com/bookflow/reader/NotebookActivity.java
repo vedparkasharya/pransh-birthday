@@ -20,7 +20,7 @@ public class NotebookActivity extends Activity {
     TextView title=new TextView(this);title.setText("BOOKFLOW  /  NOTEBOOK");title.setTextSize(14);title.setTextColor(Color.rgb(65,57,44));title.setPadding(dp(8),0,dp(12),0);bar.addView(title,new LinearLayout.LayoutParams(0,-2,1));
     add(bar,"Pen",()->pad.mode="pen");add(bar,"Marker",()->pad.mode="marker");add(bar,"Eraser",()->pad.mode="eraser");add(bar,"Undo",()->pad.undo());add(bar,"Clear",()->new AlertDialog.Builder(this).setMessage("Clear this notebook page?").setNegativeButton("Cancel",null).setPositiveButton("Clear",(d,w)->pad.clear()).show());
     Button done=tool("Done ✓");bar.addView(done);done.setOnClickListener(v->{pad.save();finish();});
-    pad=new Pad(this);root.addView(pad,new LinearLayout.LayoutParams(-1,0,1));pad.load();
+    pad=new Pad(this);root.addView(pad,new LinearLayout.LayoutParams(-1,0,1));pad.post(()->pad.load());
     status=new TextView(this);status.setText("Saved automatically on this device  ·  Use finger or stylus");status.setTextSize(11);status.setTextColor(Color.GRAY);status.setPadding(dp(8),dp(5),0,0);root.addView(status);
   }
   void add(LinearLayout bar,String label,Runnable action){Button b=tool(label);bar.addView(b);b.setOnClickListener(v->action.run());}
