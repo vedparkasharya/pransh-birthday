@@ -23,12 +23,16 @@ public class MainActivity extends Activity {
   private final int PICK=41;
   private String tool="pen";
   private int readingTheme=0; // 0 paper, 1 sepia, 2 night
+  private TextView recentTitle;
   private LinearLayout root, toolbar;
   private FrameLayout pageFrame;
   private int dp(float v){return (int)(v*getResources().getDisplayMetrics().density);}
   private TextView text(String s,int size,int color){TextView t=new TextView(this);t.setText(s);t.setTextSize(size);t.setTextColor(color);return t;}
   public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(Color.rgb(247,245,239));getWindow().setNavigationBarColor(Color.rgb(247,245,239));getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);build();}
-  private Button btn(String label){Button b=new Button(this);b.setText(label);b.setAllCaps(false);b.setTextSize(12);b.setTextColor(Color.rgb(68,58,45));b.setBackground(makeBg(Color.rgb(239,232,218),dp(18)));b.setPadding(dp(10),dp(4),dp(10),dp(4));return b;}
+  private Button btn(String label){Button b=new Button(this);b.setText(label);b.setAllCaps(false);b.setTextSize(12);b.setTextColor(Color.rgb(54,65,58));b.setBackground(makeBg(Color.rgb(237,231,218),dp(16)));b.setPadding(dp(10),dp(4),dp(10),dp(4));return b;}
+  private TextView section(String s){TextView t=text(s,12,Color.rgb(116,105,86));t.setTypeface(null,android.graphics.Typeface.BOLD);t.setLetterSpacing(.10f);return t;}
+  private LinearLayout panel(){LinearLayout p=new LinearLayout(this);p.setOrientation(1);p.setPadding(dp(15),dp(13),dp(15),dp(13));p.setBackground(makeBg(Color.WHITE,dp(20)));return p;}
+  private void openRecent(){String u=getPreferences(0).getString("last_pdf_uri","");if(u.isEmpty()){pick();return;}try{Uri uri=Uri.parse(u);descriptor=getContentResolver().openFileDescriptor(uri,"r");renderer=new PdfRenderer(descriptor);pageIndex=getPreferences(0).getInt("last_pdf_page",0);empty.setVisibility(View.GONE);showPage(pageIndex);}catch(Exception e){pick();}}
   private android.graphics.drawable.GradientDrawable makeBg(int color,int radius){android.graphics.drawable.GradientDrawable d=new android.graphics.drawable.GradientDrawable();d.setColor(color);d.setCornerRadius(radius);return d;}
   private void applyTheme(){
     int bg=readingTheme==2?Color.rgb(28,29,31):readingTheme==1?Color.rgb(235,224,199):Color.rgb(247,245,239);
@@ -44,31 +48,46 @@ public class MainActivity extends Activity {
     getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
   }
   private void build(){
-    root=new LinearLayout(this);root.setOrientation(1);root.setPadding(dp(18),dp(18),dp(18),dp(10));root.setBackgroundColor(Color.rgb(247,245,239));setContentView(root);
-    TextView brand=text("BOOKFLOW",13,Color.rgb(123,105,77));brand.setLetterSpacing(.18f);brand.setTypeface(null,android.graphics.Typeface.BOLD);root.addView(brand);
-    title=text("A quieter way to read.",25,Color.rgb(39,39,36));title.setTypeface(null,android.graphics.Typeface.BOLD);LinearLayout.LayoutParams tl=new LinearLayout.LayoutParams(-1,-2);tl.topMargin=dp(5);root.addView(title,tl);
-    Button open=btn("＋  Open a PDF");root.addView(open);open.setOnClickListener(v->pick());
-    Button smart=btn("✍  Smart Notes · English handwriting");root.addView(smart);smart.setOnClickListener(v->startActivity(new Intent(this,SmartNotesActivity.class)));
-    empty=text("Your library is empty.\\nChoose a PDF to begin reading.",16,Color.GRAY);empty.setGravity(Gravity.CENTER);root.addView(empty,new LinearLayout.LayoutParams(-1,dp(110)));
-    pageFrame=new FrameLayout(this);pageFrame.setBackgroundColor(Color.WHITE);LinearLayout.LayoutParams fp=new LinearLayout.LayoutParams(-1,0,1);fp.topMargin=dp(8);fp.bottomMargin=dp(6);root.addView(pageFrame,fp);
+    root=new LinearLayout(this);root.setOrientation(1);root.setPadding(dp(18),dp(16),dp(18),dp(10));root.setBackgroundColor(Color.rgb(246,244,237));setContentView(root);
+    LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);root.addView(header);
+    ImageView logo=new ImageView(this);logo.setImageResource(com.bookflow.reader.R.drawable.bookflow_logo);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(48),dp(48));lp.rightMargin=dp(11);header.addView(logo,lp);
+    LinearLayout brandCol=new LinearLayout(this);brandCol.setOrientation(1);header.addView(brandCol,new LinearLayout.LayoutParams(0,-2,1));
+    TextView brand=text("BOOKFLOW",15,Color.rgb(35,59,53));brand.setTypeface(null,android.graphics.Typeface.BOLD);brand.setLetterSpacing(.16f);brandCol.addView(brand);
+    TextView tagline=text("Your personal reading space",12,Color.rgb(125,116,99));brandCol.addView(tagline);
+    Button open=btn("＋ Add book");header.addView(open);open.setOnClickListener(v->pick());
+    title=text("Make time for a good book.",25,Color.rgb(39,48,42));title.setTypeface(null,android.graphics.Typeface.BOLD);LinearLayout.LayoutParams ttl=new LinearLayout.LayoutParams(-1,-2);ttl.topMargin=dp(20);root.addView(title,ttl);
+    TextView sub=text("Read, highlight, annotate and keep your thoughts together.",13,Color.rgb(119,113,100));LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,-2);sp.topMargin=dp(5);root.addView(sub,sp);
+    LinearLayout shelf=panel();LinearLayout.LayoutParams sh=new LinearLayout.LayoutParams(-1,-2);sh.topMargin=dp(17);root.addView(shelf,sh);
+    TextView shelfHead=text("MY LIBRARY",11,Color.rgb(143,119,78));shelfHead.setTypeface(null,android.graphics.Typeface.BOLD);shelfHead.setLetterSpacing(.13f);shelf.addView(shelfHead);
+    recentTitle=text("Your bookshelf is waiting",18,Color.rgb(48,57,49));recentTitle.setTypeface(null,android.graphics.Typeface.BOLD);LinearLayout.LayoutParams rh=new LinearLayout.LayoutParams(-1,-2);rh.topMargin=dp(7);shelf.addView(recentTitle,rh);
+    TextView shelfHint=text("Open a PDF to start your first reading session.",12,Color.rgb(126,121,109));shelf.addView(shelfHint);
+    Button recent=btn("Continue reading  →");LinearLayout.LayoutParams rr=new LinearLayout.LayoutParams(-1,dp(44));rr.topMargin=dp(10);shelf.addView(recent,rr);recent.setOnClickListener(v->openRecent());
+    String last=getPreferences(0).getString("last_pdf_name","");if(!last.isEmpty()){recentTitle.setText(last);shelfHint.setText("Pick up where you left off.");}
+    LinearLayout tools=new LinearLayout(this);tools.setGravity(Gravity.CENTER_VERTICAL);LinearLayout.LayoutParams tps=new LinearLayout.LayoutParams(-1,-2);tps.topMargin=dp(15);root.addView(section("YOUR STUDY TOOLS"),tps);root.addView(tools);
+    Button smart=btn("✍  Smart Notes");tools.addView(smart,new LinearLayout.LayoutParams(0,dp(48),1));smart.setOnClickListener(v->startActivity(new Intent(this,SmartNotesActivity.class)));
+    View gap=new View(this);tools.addView(gap,new LinearLayout.LayoutParams(dp(8),1));
+    Button large=btn("▤  Notebook");tools.addView(large,new LinearLayout.LayoutParams(0,dp(48),1));large.setOnClickListener(v->startActivity(new Intent(this,NotebookActivity.class)));
+    LinearLayout.LayoutParams rl=new LinearLayout.LayoutParams(-1,-2);rl.topMargin=dp(14);root.addView(section("NOW READING"),rl);
+    empty=text("Your reading page will appear here once you open a PDF.",13,Color.rgb(132,126,113));empty.setGravity(Gravity.CENTER);empty.setPadding(dp(20),dp(18),dp(20),dp(18));empty.setBackground(makeBg(Color.rgb(239,236,228),dp(18)));LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(-1,dp(75));ep.topMargin=dp(7);root.addView(empty,ep);
+    pageFrame=new FrameLayout(this);pageFrame.setBackground(makeBg(Color.WHITE,dp(12)));pageFrame.setClipToOutline(true);LinearLayout.LayoutParams fp=new LinearLayout.LayoutParams(-1,0,1);fp.topMargin=dp(8);fp.bottomMargin=dp(6);root.addView(pageFrame,fp);
     pageView=new ImageView(this);pageView.setAdjustViewBounds(true);pageView.setScaleType(ImageView.ScaleType.FIT_CENTER);pageFrame.addView(pageView,new FrameLayout.LayoutParams(-1,-1));
     ink=new AnnotationView(this);pageFrame.addView(ink,new FrameLayout.LayoutParams(-1,-1));
     toolbar=new LinearLayout(this);toolbar.setOrientation(LinearLayout.HORIZONTAL);toolbar.setGravity(Gravity.CENTER);root.addView(toolbar);
     addTool("Pen","pen");addTool("Highlight","highlight");addTool("Underline","underline");addTool("Eraser","eraser");
     LinearLayout actions=new LinearLayout(this);actions.setGravity(Gravity.CENTER);root.addView(actions);
     Button note=btn("＋ Note");actions.addView(note);note.setOnClickListener(v->editNote());
-    Button large=btn("✎ Notebook");actions.addView(large);large.setOnClickListener(v->startActivity(new Intent(this,NotebookActivity.class)));
     Button prev=btn("‹");actions.addView(prev);prev.setOnClickListener(v->showPage(pageIndex-1));
-    pageLabel=text("No document",13,Color.DKGRAY);pageLabel.setPadding(dp(8),dp(10),dp(8),dp(10));actions.addView(pageLabel);
+    pageLabel=text("No document",12,Color.DKGRAY);pageLabel.setPadding(dp(6),dp(8),dp(6),dp(8));actions.addView(pageLabel);
     Button next=btn("›");actions.addView(next);next.setOnClickListener(v->showPage(pageIndex+1));
-    Button theme=btn("◐ Theme");actions.addView(theme,0);theme.setOnClickListener(v->{readingTheme=(readingTheme+1)%3;applyTheme();theme.setText(readingTheme==0?"☼ Paper":readingTheme==1?"▤ Sepia":"☾ Night");});
+    Button theme=btn("◐");actions.addView(theme);theme.setOnClickListener(v->{readingTheme=(readingTheme+1)%3;applyTheme();theme.setText(readingTheme==0?"☼":readingTheme==1?"▤":"☾");});
     Button clear=btn("Clear");actions.addView(clear);clear.setOnClickListener(v->new AlertDialog.Builder(this).setMessage("Remove marks from this page?").setNegativeButton("Cancel",null).setPositiveButton("Clear",(d,w)->{ink.clear();saveInk();}).show());
   }
   private void addTool(String label,String value){Button b=btn(label);toolbar.addView(b,new LinearLayout.LayoutParams(0,dp(48),1));b.setOnClickListener(v->{tool=value;ink.setTool(value);for(int i=0;i<toolbar.getChildCount();i++)toolbar.getChildAt(i).setAlpha(toolbar.getChildAt(i)==b?1f:.55f);});}
   private void pick(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("application/pdf");startActivityForResult(i,PICK);}
-  protected void onActivityResult(int req,int res,Intent data){super.onActivityResult(req,res,data);if(req==PICK&&res==RESULT_OK&&data!=null){try{Uri u=data.getData();getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);if(renderer!=null)renderer.close();if(descriptor!=null)descriptor.close();descriptor=getContentResolver().openFileDescriptor(u,"r");renderer=new PdfRenderer(descriptor);pageIndex=0;empty.setVisibility(View.GONE);showPage(0);}catch(Exception e){new AlertDialog.Builder(this).setMessage("Could not open this PDF.").setPositiveButton("OK",null).show();}}}
+  protected void onActivityResult(int req,int res,Intent data){super.onActivityResult(req,res,data);if(req==PICK&&res==RESULT_OK&&data!=null){try{Uri u=data.getData();getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);getPreferences(0).edit().putString("last_pdf_uri",u.toString()).putString("last_pdf_name",queryName(u)).putInt("last_pdf_page",0).apply();recentTitle.setText(queryName(u));if(renderer!=null)renderer.close();if(descriptor!=null)descriptor.close();descriptor=getContentResolver().openFileDescriptor(u,"r");renderer=new PdfRenderer(descriptor);pageIndex=0;empty.setVisibility(View.GONE);showPage(0);}catch(Exception e){new AlertDialog.Builder(this).setMessage("Could not open this PDF.").setPositiveButton("OK",null).show();}}}
   private String key(){return "ink_"+pageIndex;}
-  private void showPage(int n){if(renderer==null||n<0||n>=renderer.getPageCount())return;pageIndex=n;PdfRenderer.Page p=renderer.openPage(n);int w=Math.max(1,getResources().getDisplayMetrics().widthPixels-dp(40));int h=Math.max(1,(int)(w*(float)p.getHeight()/p.getWidth()));Bitmap b=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);b.eraseColor(Color.WHITE);p.render(b,null,null,PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);p.close();pageView.setImageBitmap(b);applyTheme();pageLabel.setText((n+1)+" / "+renderer.getPageCount());title.setText("Reading · Study");ink.load(getPreferences(0).getString(key(),""));}
+  private String queryName(Uri u){String name=u.getLastPathSegment();if(name==null)return "Your recent book";int slash=name.lastIndexOf("/");if(slash>=0)name=name.substring(slash+1);try{name=java.net.URLDecoder.decode(name,"UTF-8");}catch(Exception ignored){}return name.length()>36?name.substring(0,33)+"…":name;}
+  private void showPage(int n){if(renderer==null||n<0||n>=renderer.getPageCount())return;pageIndex=n;PdfRenderer.Page p=renderer.openPage(n);int w=Math.max(1,getResources().getDisplayMetrics().widthPixels-dp(40));int h=Math.max(1,(int)(w*(float)p.getHeight()/p.getWidth()));Bitmap b=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);b.eraseColor(Color.WHITE);p.render(b,null,null,PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);p.close();pageView.setImageBitmap(b);applyTheme();pageLabel.setText((n+1)+" / "+renderer.getPageCount());getPreferences(0).edit().putInt("last_pdf_page",n).apply();title.setText("Reading · Study");ink.load(getPreferences(0).getString(key(),""));}
   private void editNote(){if(renderer==null)return;EditText input=new EditText(this);input.setMinLines(4);input.setGravity(Gravity.TOP);input.setText(getPreferences(0).getString("note_"+pageIndex,""));new AlertDialog.Builder(this).setTitle("Page "+(pageIndex+1)+" notes").setView(input).setNegativeButton("Cancel",null).setPositiveButton("Save",(d,w)->getPreferences(0).edit().putString("note_"+pageIndex,input.getText().toString()).apply()).show();}
   private void saveInk(){getPreferences(0).edit().putString(key(),ink.serialize()).apply();}
   class AnnotationView extends View{
