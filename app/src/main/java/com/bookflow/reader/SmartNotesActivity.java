@@ -9,7 +9,7 @@ import android.view.*;
 import android.widget.*;
 import android.content.*;
 import com.google.mlkit.vision.digitalink.*;
-import com.google.mlkit.vision.digitalink.common.*;
+import com.google.mlkit.common.model.DownloadConditions;\nimport com.google.mlkit.common.model.RemoteModelManager;
 import com.google.android.gms.tasks.*;
 import java.util.*;
 
@@ -56,13 +56,13 @@ public class SmartNotesActivity extends Activity {
   private void apply(Object span){int a=editor.getSelectionStart(),z=editor.getSelectionEnd();if(a<0||z<=a){Toast.makeText(this,"Select some text first",Toast.LENGTH_SHORT).show();return;}editor.getText().setSpan(span,a,z,Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);}
   private void save(){getPreferences(0).edit().putString(STORE,android.text.Html.toHtml(editor.getText(),android.text.Html.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE)).apply();status.setText("Saved on this device ✓");}
   private void setupRecognizer(){
-    try{modelId=DigitalInkRecognitionModelIdentifier.fromLanguageTag("en-US");if(modelId==null){status.setText("English handwriting model is unavailable.");return;}model=DigitalInkRecognitionModel.builder(modelId).build();DigitalInkRecognitionModelManager manager=DigitalInkRecognition.getClient().getModelManager();manager.download(model, new DownloadConditions.Builder().build()).addOnSuccessListener(v->{recognizer=DigitalInkRecognition.getClient(DigitalInkRecognizerOptions.builder(modelId).build());status.setText("English handwriting recognition ready ✓");}).addOnFailureListener(e->status.setText("Model download failed. Connect to internet and try again."));}catch(Exception e){status.setText("Handwriting recognition could not start.");}
+    try{modelId=DigitalInkRecognitionModelIdentifier.fromLanguageTag("en-US");if(modelId==null){status.setText("English handwriting model is unavailable.");return;}model=DigitalInkRecognitionModel.builder(modelId).build();RemoteModelManager manager=RemoteModelManager.getInstance();manager.download(model, new DownloadConditions.Builder().build()).addOnSuccessListener(v->{recognizer=DigitalInkRecognition.getClient(DigitalInkRecognizerOptions.builder(model).build());status.setText("English handwriting recognition ready ✓");}).addOnFailureListener(e->status.setText("Model download failed. Connect to internet and try again."));}catch(Exception e){status.setText("Handwriting recognition could not start.");}
   }
   private void recognise(){
     if(recognizer==null){status.setText("English model is still downloading. Please wait.");return;}
     Ink ink=inkCanvas.toInk();if(ink==null){status.setText("Write something in the handwriting area first.");return;}
     status.setText("Recognising handwriting…");
-    recognizer.recognize(ink).addOnSuccessListener(result->{String value=result.getText();if(value==null||value.trim().isEmpty()){status.setText("No text recognised. Try writing more clearly.");return;}int p=Math.max(0,editor.getSelectionStart());editor.getText().insert(p,value+" ");status.setText("Recognised. You can edit and format the text.");inkCanvas.clear();}).addOnFailureListener(e->status.setText("Recognition failed. Please try again."));
+    recognizer.recognize(ink).addOnSuccessListener(result->{String value=result.getCandidates().isEmpty()?\"\":result.getCandidates().get(0).getText();if(value==null||value.trim().isEmpty()){status.setText("No text recognised. Try writing more clearly.");return;}int p=Math.max(0,editor.getSelectionStart());editor.getText().insert(p,value+" ");status.setText("Recognised. You can edit and format the text.");inkCanvas.clear();}).addOnFailureListener(e->status.setText("Recognition failed. Please try again."));
   }
   @Override protected void onPause(){save();super.onPause();}
   class InkCanvas extends View{
