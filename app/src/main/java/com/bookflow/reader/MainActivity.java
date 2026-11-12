@@ -37,6 +37,7 @@ public class MainActivity extends Activity {
   private void openRecent(){String u=getPreferences(0).getString("last_pdf_uri","");if(u.isEmpty()){pick();return;}try{Uri uri=Uri.parse(u);descriptor=getContentResolver().openFileDescriptor(uri,"r");renderer=new PdfRenderer(descriptor);pageIndex=getPreferences(0).getInt("last_pdf_page",0);empty.setVisibility(View.GONE);showPage(pageIndex);}catch(Exception e){pick();}}
   private android.graphics.drawable.GradientDrawable makeBg(int color,int radius){android.graphics.drawable.GradientDrawable d=new android.graphics.drawable.GradientDrawable();d.setColor(color);d.setCornerRadius(radius);return d;}
   private void applyTheme(){
+    getPreferences(0).edit().putInt("reading_theme",readingTheme).apply();
     int bg=readingTheme==2?Color.rgb(28,29,31):readingTheme==1?Color.rgb(235,224,199):Color.rgb(247,245,239);
     root.setBackgroundColor(bg);pageFrame.setBackgroundColor(readingTheme==2?Color.rgb(20,21,23):readingTheme==1?Color.rgb(235,224,199):Color.WHITE);
     title.setTextColor(readingTheme==2?Color.WHITE:Color.rgb(39,39,36));
@@ -50,6 +51,7 @@ public class MainActivity extends Activity {
     getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
   }
   private void build(){
+    readingTheme=getPreferences(0).getInt("reading_theme",0);
     root=new LinearLayout(this);root.setOrientation(1);root.setPadding(dp(18),dp(16),dp(18),dp(10));root.setBackgroundColor(Color.rgb(246,244,237));setContentView(root);
     LinearLayout header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);root.addView(header);
     ImageView logo=new ImageView(this);logo.setImageResource(com.bookflow.reader.R.drawable.bookflow_logo);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(48),dp(48));lp.rightMargin=dp(11);header.addView(logo,lp);
@@ -90,7 +92,7 @@ public class MainActivity extends Activity {
   private void addTool(String label,String value){Button b=btn(label);toolbar.addView(b,new LinearLayout.LayoutParams(0,dp(48),1));b.setOnClickListener(v->{tool=value;ink.setTool(value);for(int i=0;i<toolbar.getChildCount();i++)toolbar.getChildAt(i).setAlpha(toolbar.getChildAt(i)==b?1f:.55f);});}
   private void pick(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("application/pdf");startActivityForResult(i,PICK);}
   protected void onActivityResult(int req,int res,Intent data){super.onActivityResult(req,res,data);if(req==PICK&&res==RESULT_OK&&data!=null){try{Uri u=data.getData();getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);getPreferences(0).edit().putString("last_pdf_uri",u.toString()).putString("last_pdf_name",queryName(u)).putInt("last_pdf_page",0).apply();recentTitle.setText(queryName(u));if(renderer!=null)renderer.close();if(descriptor!=null)descriptor.close();descriptor=getContentResolver().openFileDescriptor(u,"r");renderer=new PdfRenderer(descriptor);currentUri=u;getPreferences(0).edit().putString("last_pdf_uri",u.toString()).apply();pageIndex=getPreferences(0).getInt("progress_"+uriKey(u),0);empty.setVisibility(View.GONE);showPage(pageIndex);}catch(Exception e){new AlertDialog.Builder(this).setMessage("Could not open this PDF.").setPositiveButton("OK",null).show();}}}
-  private String key(){return "ink_"+pageIndex;}
+  private String key(){return "ink_"+(currentUri==null?"default":uriKey(currentUri))+"_"+pageIndex;}
   private String uriKey(Uri u){return Integer.toHexString(u.toString().hashCode());}
   private void resumeLast(){try{String raw=getPreferences(0).getString("last_pdf_uri","");if(raw.isEmpty()){pick();return;}Uri u=Uri.parse(raw);getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);if(renderer!=null)renderer.close();if(descriptor!=null)descriptor.close();descriptor=getContentResolver().openFileDescriptor(u,"r");renderer=new PdfRenderer(descriptor);currentUri=u;empty.setVisibility(View.GONE);showPage(getPreferences(0).getInt("progress_"+uriKey(u),0));}catch(Exception e){pick();}}
   private void toggleBookmark(Button b){if(renderer==null||currentUri==null)return;String k="bookmarks_"+uriKey(currentUri);Set<String> pages=new HashSet<>(getPreferences(0).getStringSet(k,new HashSet<>()));String p=String.valueOf(pageIndex);if(pages.contains(p)){pages.remove(p);b.setText("☆");}else{pages.add(p);b.setText("★");}getPreferences(0).edit().putStringSet(k,pages).apply();Toast.makeText(this,pages.contains(p)?"Page bookmarked":"Bookmark removed",Toast.LENGTH_SHORT).show();}
