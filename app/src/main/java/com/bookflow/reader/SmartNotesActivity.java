@@ -8,7 +8,7 @@ import android.text.style.*;
 import android.view.*;
 import android.widget.*;
 import android.content.*;
-import com.google.mlkit.vision.digitalink.*;
+import com.google.mlkit.vision.digitalink.recognition.*;
 import com.google.mlkit.common.model.DownloadConditions;
 import com.google.mlkit.common.model.RemoteModelManager;
 import com.google.android.gms.tasks.*;
