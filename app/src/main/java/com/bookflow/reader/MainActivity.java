@@ -33,7 +33,8 @@ public class MainActivity extends Activity {
     TextView brand=text("BOOKFLOW  ·  STUDY MODE",12,Color.rgb(123,105,77));brand.setLetterSpacing(.12f);root.addView(brand);
     title=text("Your reading space.",25,Color.rgb(39,39,36));root.addView(title);
     Button open=btn("＋  Open a PDF");root.addView(open);open.setOnClickListener(v->pick());
-    empty=text("Your library is empty.\nChoose a PDF to begin reading.",16,Color.GRAY);empty.setGravity(Gravity.CENTER);root.addView(empty,new LinearLayout.LayoutParams(-1,dp(110)));
+    Button smart=btn("✍  Smart Notes · English handwriting");root.addView(smart);smart.setOnClickListener(v->startActivity(new Intent(this,SmartNotesActivity.class)));
+    empty=text("Your library is empty.\\nChoose a PDF to begin reading.",16,Color.GRAY);empty.setGravity(Gravity.CENTER);root.addView(empty,new LinearLayout.LayoutParams(-1,dp(110)));
     pageFrame=new FrameLayout(this);pageFrame.setBackgroundColor(Color.WHITE);LinearLayout.LayoutParams fp=new LinearLayout.LayoutParams(-1,0,1);fp.topMargin=dp(8);fp.bottomMargin=dp(6);root.addView(pageFrame,fp);
     pageView=new ImageView(this);pageView.setAdjustViewBounds(true);pageView.setScaleType(ImageView.ScaleType.FIT_CENTER);pageFrame.addView(pageView,new FrameLayout.LayoutParams(-1,-1));
     ink=new AnnotationView(this);pageFrame.addView(ink,new FrameLayout.LayoutParams(-1,-1));
