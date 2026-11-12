@@ -1,9 +1,7 @@
 # BookFlow
 
-Native Android PDF reader project.
+A minimal native Android PDF reader. Open local PDFs, read page-by-page, and use Previous/Next navigation. No ads, analytics, or internet permission.
 
-This branch is reserved for the BookFlow Android application. The previous birthday website has been removed from this branch. The `main` branch remains unchanged.
+## Build APK
 
-## Build
-
-The Android Gradle project and GitHub Actions APK workflow will be added here next.
+GitHub Actions builds a debug APK on every push to `bookflow-android` and on manual dispatch. Download `BookFlow-debug-apk` from the Actions run artifacts.
