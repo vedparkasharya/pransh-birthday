@@ -4,6 +4,9 @@ import android.app.*;
 import android.os.*;
 import android.graphics.*;
 import android.graphics.drawable.Drawable;
+import android.graphics.pdf.PdfDocument;
+import android.net.Uri;
+import java.io.OutputStream;
 import android.text.*;
 import android.text.style.*;
 import android.view.*;
@@ -23,6 +26,7 @@ public class SmartNotesActivity extends Activity {
   private DigitalInkRecognitionModelIdentifier modelId;
   private TextView status;
   private final String STORE="bookflow_smart_notes_html";
+  private static final int CREATE_PDF=7412;
   private int dp(float n){return (int)(n*getResources().getDisplayMetrics().density);}
   private Button button(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(12);return b;}
 
@@ -51,11 +55,22 @@ public class SmartNotesActivity extends Activity {
     Button recognise=button("Recognise English");actions.addView(recognise);recognise.setOnClickListener(v->recognise());
     Button clear=button("Clear ink");actions.addView(clear);clear.setOnClickListener(v->inkCanvas.clear());
     Button save=button("Save notes");actions.addView(save);save.setOnClickListener(v->save());
+    Button pdf=button("Download PDF");actions.addView(pdf);pdf.setOnClickListener(v->exportPdf());
     status=new TextView(this);status.setText("Handwriting recognition downloads the English model once; internet may be needed.");status.setTextSize(11);status.setTextColor(Color.GRAY);root.addView(status);
     setupRecognizer();
   }
   private void add(LinearLayout bar,String label,Runnable action){Button b=button(label);bar.addView(b,new LinearLayout.LayoutParams(0,dp(44),1));b.setOnClickListener(v->action.run());}
   private void apply(Object span){int a=editor.getSelectionStart(),z=editor.getSelectionEnd();if(a<0||z<=a){Toast.makeText(this,"Select some text first",Toast.LENGTH_SHORT).show();return;}editor.getText().setSpan(span,a,z,Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);}
+  private void exportPdf(){ Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("application/pdf");i.putExtra(Intent.EXTRA_TITLE,"BookFlow-Notes.pdf");startActivityForResult(i,CREATE_PDF); }
+  @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){super.onActivityResult(requestCode,resultCode,data);if(requestCode!=CREATE_PDF||resultCode!=RESULT_OK||data==null||data.getData()==null)return;try{writePdf(data.getData());status.setText("PDF exported successfully ✓");}catch(Exception e){status.setText("PDF export failed: "+e.getMessage());}}
+  private void writePdf(Uri uri)throws Exception{
+    final int w=595,h=842,left=48,top=52,tw=w-left-38,bh=h-top-48;
+    TextPaint tp=new TextPaint(Paint.ANTI_ALIAS_FLAG);tp.setColor(Color.rgb(35,45,65));tp.setTextSize(14);
+    CharSequence value=editor.getText();StaticLayout layout=StaticLayout.Builder.obtain(value,0,value.length(),tp,tw).setAlignment(Layout.Alignment.ALIGN_NORMAL).setLineSpacing(5,1f).setIncludePad(true).build();
+    PdfDocument pdf=new PdfDocument();int offset=0,page=1;
+    do{PdfDocument.Page pg=pdf.startPage(new PdfDocument.PageInfo.Builder(w,h,page).create());Canvas cv=pg.getCanvas();Paint p=new Paint(3);p.setColor(Color.rgb(255,254,248));cv.drawRect(0,0,w,h,p);p.setColor(Color.rgb(205,222,239));p.setStrokeWidth(.7f);for(int yy=top+28;yy<h-24;yy+=30)cv.drawLine(0,yy,w,yy,p);p.setColor(Color.rgb(225,145,145));cv.drawLine(left-12,0,left-12,h,p);p.setColor(Color.rgb(95,78,52));p.setTextSize(10);cv.drawText("BOOKFLOW  /  STUDY NOTES",left,28,p);cv.save();cv.translate(left,top);cv.clipRect(0,0,tw,bh);cv.translate(0,-offset);layout.draw(cv);cv.restore();pdf.finishPage(pg);offset+=bh;page++;}while(offset<layout.getHeight());
+    try(OutputStream out=getContentResolver().openOutputStream(uri)){if(out==null)throw new Exception("Cannot open destination");pdf.writeTo(out);}finally{pdf.close();}
+  }
   private void save(){getPreferences(0).edit().putString(STORE,android.text.Html.toHtml(editor.getText(),android.text.Html.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE)).apply();status.setText("Saved on this device ✓");}
   private void setupRecognizer(){
     try{modelId=DigitalInkRecognitionModelIdentifier.fromLanguageTag("en-US");if(modelId==null){status.setText("English handwriting model is unavailable.");return;}model=DigitalInkRecognitionModel.builder(modelId).build();RemoteModelManager manager=RemoteModelManager.getInstance();manager.download(model, new DownloadConditions.Builder().build()).addOnSuccessListener(v->{recognizer=DigitalInkRecognition.getClient(DigitalInkRecognizerOptions.builder(model).build());status.setText("English handwriting recognition ready ✓");}).addOnFailureListener(e->status.setText("Model download failed. Connect to internet and try again."));}catch(Exception e){status.setText("Handwriting recognition could not start.");}
