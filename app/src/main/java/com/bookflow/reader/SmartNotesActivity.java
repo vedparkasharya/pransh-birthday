@@ -3,6 +3,7 @@ package com.bookflow.reader;
 import android.app.*;
 import android.os.*;
 import android.graphics.*;
+import android.graphics.drawable.Drawable;
 import android.text.*;
 import android.text.style.*;
 import android.view.*;
@@ -41,7 +42,7 @@ public class SmartNotesActivity extends Activity {
     add(format,"Blue",()->apply(new ForegroundColorSpan(Color.rgb(35,75,160))));
     add(format,"Yellow",()->apply(new BackgroundColorSpan(Color.YELLOW)));
     add(format,"• List",()->{int p=editor.getSelectionStart();editor.getText().insert(Math.max(0,p),"• ");});
-    editor=new EditText(this);editor.setGravity(Gravity.TOP|Gravity.START);editor.setTextSize(17);editor.setPadding(dp(12),dp(12),dp(12),dp(12));editor.setHint("Your recognised and typed notes appear here…");editor.setBackgroundColor(Color.WHITE);editor.setMinLines(7);
+    editor=new EditText(this);editor.setGravity(Gravity.TOP|Gravity.START);editor.setTextSize(17);editor.setPadding(dp(50),dp(14),dp(14),dp(14));editor.setHint("Your recognised and typed notes appear here…");editor.setBackground(new RuledPaperDrawable());editor.setMinLines(7);editor.setLineSpacing(dp(7),1f);
     LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(-1,0,1);ep.topMargin=dp(8);root.addView(editor,ep);
     String saved=getPreferences(0).getString(STORE,"");if(!saved.isEmpty())editor.setText(android.text.Html.fromHtml(saved,android.text.Html.FROM_HTML_MODE_LEGACY));
     TextView handTitle=new TextView(this);handTitle.setText("HANDWRITING INPUT  ·  Write below, then tap Recognise");handTitle.setTextSize(12);handTitle.setTextColor(Color.DKGRAY);handTitle.setPadding(0,dp(8),0,dp(4));root.addView(handTitle);
@@ -66,6 +67,18 @@ public class SmartNotesActivity extends Activity {
     recognizer.recognize(ink).addOnSuccessListener(result->{String value=result.getCandidates().isEmpty()?"":result.getCandidates().get(0).getText();if(value==null||value.trim().isEmpty()){status.setText("No text recognised. Try writing more clearly.");return;}int p=Math.max(0,editor.getSelectionStart());editor.getText().insert(p,value+" ");status.setText("Recognised. You can edit and format the text.");inkCanvas.clear();}).addOnFailureListener(e->status.setText("Recognition failed. Please try again."));
   }
   @Override protected void onPause(){save();super.onPause();}
+  class RuledPaperDrawable extends Drawable {
+    private final Paint paper=new Paint(3), lines=new Paint(3), margin=new Paint(3);
+    RuledPaperDrawable(){paper.setColor(Color.rgb(255,254,248));lines.setColor(Color.rgb(190,215,238));lines.setStrokeWidth(dp(1));margin.setColor(Color.rgb(225,145,145));margin.setStrokeWidth(dp(1));}
+    @Override public void draw(Canvas canvas){
+      Rect b=getBounds();canvas.drawRect(b,paper);
+      float gap=dp(30);for(float y=dp(42);y<b.height();y+=gap)canvas.drawLine(b.left,y,b.right,y,lines);
+      canvas.drawLine(b.left+dp(36),b.top,b.left+dp(36),b.bottom,margin);
+    }
+    @Override public void setAlpha(int alpha){paper.setAlpha(alpha);lines.setAlpha(alpha);margin.setAlpha(alpha);}
+    @Override public void setColorFilter(android.graphics.ColorFilter filter){paper.setColorFilter(filter);lines.setColorFilter(filter);margin.setColorFilter(filter);}
+    @Override public int getOpacity(){return android.graphics.PixelFormat.OPAQUE;}
+  }
   class InkCanvas extends View{
     ArrayList<Ink.Stroke> strokes=new ArrayList<>();Ink.Stroke.Builder active;long start;
     Paint paint=new Paint(3);Path path=new Path();float lastX,lastY;
