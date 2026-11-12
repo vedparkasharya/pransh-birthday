@@ -41,7 +41,7 @@ public class MainActivity extends Activity {
     addTool("Pen","pen");addTool("Highlight","highlight");addTool("Underline","underline");addTool("Eraser","eraser");
     LinearLayout actions=new LinearLayout(this);actions.setGravity(Gravity.CENTER);root.addView(actions);
     Button note=btn("＋ Note");actions.addView(note);note.setOnClickListener(v->editNote());
-    Button large=btn("↔ Large writing");actions.addView(large);large.setOnClickListener(v->{setRequestedOrientation(getRequestedOrientation()==ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE?ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED:ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);});
+    Button large=btn("✎ Notebook");actions.addView(large);large.setOnClickListener(v->startActivity(new Intent(this,NotebookActivity.class)));
     Button prev=btn("‹");actions.addView(prev);prev.setOnClickListener(v->showPage(pageIndex-1));
     pageLabel=text("No document",13,Color.DKGRAY);pageLabel.setPadding(dp(8),dp(10),dp(8),dp(10));actions.addView(pageLabel);
     Button next=btn("›");actions.addView(next);next.setOnClickListener(v->showPage(pageIndex+1));
