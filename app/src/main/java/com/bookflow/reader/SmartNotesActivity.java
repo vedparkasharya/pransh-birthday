@@ -9,7 +9,8 @@ import android.view.*;
 import android.widget.*;
 import android.content.*;
 import com.google.mlkit.vision.digitalink.*;
-import com.google.mlkit.common.model.DownloadConditions;\nimport com.google.mlkit.common.model.RemoteModelManager;
+import com.google.mlkit.common.model.DownloadConditions;
+import com.google.mlkit.common.model.RemoteModelManager;
 import com.google.android.gms.tasks.*;
 import java.util.*;
 
@@ -62,7 +63,7 @@ public class SmartNotesActivity extends Activity {
     if(recognizer==null){status.setText("English model is still downloading. Please wait.");return;}
     Ink ink=inkCanvas.toInk();if(ink==null){status.setText("Write something in the handwriting area first.");return;}
     status.setText("Recognising handwriting…");
-    recognizer.recognize(ink).addOnSuccessListener(result->{String value=result.getCandidates().isEmpty()?\"\":result.getCandidates().get(0).getText();if(value==null||value.trim().isEmpty()){status.setText("No text recognised. Try writing more clearly.");return;}int p=Math.max(0,editor.getSelectionStart());editor.getText().insert(p,value+" ");status.setText("Recognised. You can edit and format the text.");inkCanvas.clear();}).addOnFailureListener(e->status.setText("Recognition failed. Please try again."));
+    recognizer.recognize(ink).addOnSuccessListener(result->{String value=result.getCandidates().isEmpty()?"":result.getCandidates().get(0).getText();if(value==null||value.trim().isEmpty()){status.setText("No text recognised. Try writing more clearly.");return;}int p=Math.max(0,editor.getSelectionStart());editor.getText().insert(p,value+" ");status.setText("Recognised. You can edit and format the text.");inkCanvas.clear();}).addOnFailureListener(e->status.setText("Recognition failed. Please try again."));
   }
   @Override protected void onPause(){save();super.onPause();}
   class InkCanvas extends View{
