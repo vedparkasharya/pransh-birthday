@@ -22,16 +22,31 @@ public class MainActivity extends Activity {
   private int pageIndex=0;
   private final int PICK=41;
   private String tool="pen";
+  private int readingTheme=0; // 0 paper, 1 sepia, 2 night
   private LinearLayout root, toolbar;
   private FrameLayout pageFrame;
   private int dp(float v){return (int)(v*getResources().getDisplayMetrics().density);}
   private TextView text(String s,int size,int color){TextView t=new TextView(this);t.setText(s);t.setTextSize(size);t.setTextColor(color);return t;}
   public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(Color.rgb(247,245,239));getWindow().setNavigationBarColor(Color.rgb(247,245,239));getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);build();}
-  private Button btn(String label){Button b=new Button(this);b.setText(label);b.setAllCaps(false);b.setTextSize(12);return b;}
+  private Button btn(String label){Button b=new Button(this);b.setText(label);b.setAllCaps(false);b.setTextSize(12);b.setTextColor(Color.rgb(68,58,45));b.setBackground(makeBg(Color.rgb(239,232,218),dp(18)));b.setPadding(dp(10),dp(4),dp(10),dp(4));return b;}
+  private android.graphics.drawable.GradientDrawable makeBg(int color,int radius){android.graphics.drawable.GradientDrawable d=new android.graphics.drawable.GradientDrawable();d.setColor(color);d.setCornerRadius(radius);return d;}
+  private void applyTheme(){
+    int bg=readingTheme==2?Color.rgb(28,29,31):readingTheme==1?Color.rgb(235,224,199):Color.rgb(247,245,239);
+    root.setBackgroundColor(bg);pageFrame.setBackgroundColor(readingTheme==2?Color.rgb(20,21,23):readingTheme==1?Color.rgb(235,224,199):Color.WHITE);
+    title.setTextColor(readingTheme==2?Color.WHITE:Color.rgb(39,39,36));
+    pageLabel.setTextColor(readingTheme==2?Color.LTGRAY:Color.DKGRAY);
+    if(pageView.getDrawable()!=null){
+      if(readingTheme==2){float[] m={-1,0,0,0,255,0,-1,0,0,255,0,0,-1,0,255,0,0,0,1,0};pageView.setColorFilter(new android.graphics.ColorMatrixColorFilter(m));}
+      else if(readingTheme==1){float[] m={.90f,.08f,.02f,0,12,.04f,.88f,.04f,0,8,.02f,.08f,.78f,0,0,0,0,0,1,0};pageView.setColorFilter(new android.graphics.ColorMatrixColorFilter(m));}
+      else pageView.clearColorFilter();
+    }
+    getWindow().setStatusBarColor(bg);getWindow().setNavigationBarColor(bg);
+    getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+  }
   private void build(){
-    root=new LinearLayout(this);root.setOrientation(1);root.setPadding(dp(14),dp(18),dp(14),dp(8));root.setBackgroundColor(Color.rgb(247,245,239));setContentView(root);
-    TextView brand=text("BOOKFLOW  ·  STUDY MODE",12,Color.rgb(123,105,77));brand.setLetterSpacing(.12f);root.addView(brand);
-    title=text("Your reading space.",25,Color.rgb(39,39,36));root.addView(title);
+    root=new LinearLayout(this);root.setOrientation(1);root.setPadding(dp(18),dp(18),dp(18),dp(10));root.setBackgroundColor(Color.rgb(247,245,239));setContentView(root);
+    TextView brand=text("BOOKFLOW",13,Color.rgb(123,105,77));brand.setLetterSpacing(.18f);brand.setTypeface(null,android.graphics.Typeface.BOLD);root.addView(brand);
+    title=text("A quieter way to read.",25,Color.rgb(39,39,36));title.setTypeface(null,android.graphics.Typeface.BOLD);LinearLayout.LayoutParams tl=new LinearLayout.LayoutParams(-1,-2);tl.topMargin=dp(5);root.addView(title,tl);
     Button open=btn("＋  Open a PDF");root.addView(open);open.setOnClickListener(v->pick());
     Button smart=btn("✍  Smart Notes · English handwriting");root.addView(smart);smart.setOnClickListener(v->startActivity(new Intent(this,SmartNotesActivity.class)));
     empty=text("Your library is empty.\\nChoose a PDF to begin reading.",16,Color.GRAY);empty.setGravity(Gravity.CENTER);root.addView(empty,new LinearLayout.LayoutParams(-1,dp(110)));
@@ -46,13 +61,14 @@ public class MainActivity extends Activity {
     Button prev=btn("‹");actions.addView(prev);prev.setOnClickListener(v->showPage(pageIndex-1));
     pageLabel=text("No document",13,Color.DKGRAY);pageLabel.setPadding(dp(8),dp(10),dp(8),dp(10));actions.addView(pageLabel);
     Button next=btn("›");actions.addView(next);next.setOnClickListener(v->showPage(pageIndex+1));
+    Button theme=btn("◐ Theme");actions.addView(theme,0);theme.setOnClickListener(v->{readingTheme=(readingTheme+1)%3;applyTheme();theme.setText(readingTheme==0?"☼ Paper":readingTheme==1?"▤ Sepia":"☾ Night");});
     Button clear=btn("Clear");actions.addView(clear);clear.setOnClickListener(v->new AlertDialog.Builder(this).setMessage("Remove marks from this page?").setNegativeButton("Cancel",null).setPositiveButton("Clear",(d,w)->{ink.clear();saveInk();}).show());
   }
   private void addTool(String label,String value){Button b=btn(label);toolbar.addView(b,new LinearLayout.LayoutParams(0,dp(48),1));b.setOnClickListener(v->{tool=value;ink.setTool(value);for(int i=0;i<toolbar.getChildCount();i++)toolbar.getChildAt(i).setAlpha(toolbar.getChildAt(i)==b?1f:.55f);});}
   private void pick(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("application/pdf");startActivityForResult(i,PICK);}
   protected void onActivityResult(int req,int res,Intent data){super.onActivityResult(req,res,data);if(req==PICK&&res==RESULT_OK&&data!=null){try{Uri u=data.getData();getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);if(renderer!=null)renderer.close();if(descriptor!=null)descriptor.close();descriptor=getContentResolver().openFileDescriptor(u,"r");renderer=new PdfRenderer(descriptor);pageIndex=0;empty.setVisibility(View.GONE);showPage(0);}catch(Exception e){new AlertDialog.Builder(this).setMessage("Could not open this PDF.").setPositiveButton("OK",null).show();}}}
   private String key(){return "ink_"+pageIndex;}
-  private void showPage(int n){if(renderer==null||n<0||n>=renderer.getPageCount())return;pageIndex=n;PdfRenderer.Page p=renderer.openPage(n);int w=Math.max(1,getResources().getDisplayMetrics().widthPixels-dp(40));int h=Math.max(1,(int)(w*(float)p.getHeight()/p.getWidth()));Bitmap b=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);b.eraseColor(Color.WHITE);p.render(b,null,null,PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);p.close();pageView.setImageBitmap(b);pageLabel.setText((n+1)+" / "+renderer.getPageCount());title.setText("Reading · Study");ink.load(getPreferences(0).getString(key(),""));}
+  private void showPage(int n){if(renderer==null||n<0||n>=renderer.getPageCount())return;pageIndex=n;PdfRenderer.Page p=renderer.openPage(n);int w=Math.max(1,getResources().getDisplayMetrics().widthPixels-dp(40));int h=Math.max(1,(int)(w*(float)p.getHeight()/p.getWidth()));Bitmap b=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);b.eraseColor(Color.WHITE);p.render(b,null,null,PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);p.close();pageView.setImageBitmap(b);applyTheme();pageLabel.setText((n+1)+" / "+renderer.getPageCount());title.setText("Reading · Study");ink.load(getPreferences(0).getString(key(),""));}
   private void editNote(){if(renderer==null)return;EditText input=new EditText(this);input.setMinLines(4);input.setGravity(Gravity.TOP);input.setText(getPreferences(0).getString("note_"+pageIndex,""));new AlertDialog.Builder(this).setTitle("Page "+(pageIndex+1)+" notes").setView(input).setNegativeButton("Cancel",null).setPositiveButton("Save",(d,w)->getPreferences(0).edit().putString("note_"+pageIndex,input.getText().toString()).apply()).show();}
   private void saveInk(){getPreferences(0).edit().putString(key(),ink.serialize()).apply();}
   class AnnotationView extends View{
