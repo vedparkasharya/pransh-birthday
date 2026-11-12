@@ -47,7 +47,21 @@ public class NotebookActivity extends Activity {
     void save(){JSONArray a=new JSONArray();try{for(Stroke s:strokes){JSONObject o=new JSONObject();o.put("c",s.color);o.put("w",s.width);o.put("m",s.mode);JSONArray pts=new JSONArray();for(PointF q:s.points){JSONArray xy=new JSONArray();xy.put(q.x/Math.max(1,getWidth()));xy.put(q.y/Math.max(1,getHeight()));pts.put(xy);}o.put("p",pts);a.put(o);}}catch(Exception ignored){}getPreferences(0).edit().putString(storeKey+"_page_"+pageIndex,a.toString()).apply();}
     void load(){strokes.clear();try{JSONArray a=new JSONArray(getPreferences(0).getString(storeKey+"_page_"+pageIndex,"[]"));for(int i=0;i<a.length();i++){JSONObject o=a.getJSONObject(i);Stroke s=new Stroke();s.color=o.getInt("c");s.width=(float)o.getDouble("w");s.mode=o.getString("m");JSONArray pts=o.getJSONArray("p");for(int j=0;j<pts.length();j++){JSONArray xy=pts.getJSONArray(j);s.points.add(new PointF((float)xy.getDouble(0)*getWidth(),(float)xy.getDouble(1)*getHeight()));}strokes.add(s);}}catch(Exception ignored){}postInvalidate();}
   }
+  private void chooseWidth(){
+    final String[] widths={"Fine · 2","Normal · 3","Medium · 5","Bold · 8"};
+    final float[] values={dp(2),dp(3),dp(5),dp(8)};
+    new AlertDialog.Builder(this).setTitle("Pen thickness").setItems(widths,(d,w)->{pad.penWidth=values[w];pad.mode="pen";}).show();
+  }
+  private void changePage(int delta){
+    if(pad==null)return;
+    pad.save();
+    int count=getPreferences(0).getInt("bookflow_notebook_page_count",1);
+    pageIndex=Math.max(0,Math.min(99,pageIndex+delta));
+    if(pageIndex>=count){count=pageIndex+1;getPreferences(0).edit().putInt("bookflow_notebook_page_count",count).apply();}
+    pad.load();
+    if(status!=null)status.setText("Page "+(pageIndex+1)+" of "+count+" · Saved automatically");
+  }
   private void exportPdf(){Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("application/pdf");i.putExtra(Intent.EXTRA_TITLE,"BookFlow-Notebook.pdf");startActivityForResult(i,CREATE_PDF);}
-  @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){super.onActivityResult(requestCode,resultCode,data);if(requestCode!=CREATE_PDF||resultCode!=RESULT_OK||data==null||data.getData()==null)return;try{pad.save();PdfDocument pdf=new PdfDocument();PdfDocument.Page pg=pdf.startPage(new PdfDocument.PageInfo.Builder(842,595,1).create());Canvas cv=pg.getCanvas();cv.drawColor(Color.WHITE);float scale=Math.min(800f/Math.max(1,pad.getWidth()),550f/Math.max(1,pad.getHeight()));cv.save();cv.translate(21,22);cv.scale(scale,scale);pad.draw(cv);cv.restore();pdf.finishPage(pg);try(OutputStream out=getContentResolver().openOutputStream(data.getData())){if(out==null)throw new Exception("Cannot open destination");pdf.writeTo(out);}pdf.close();status.setText("Notebook PDF exported ✓");}catch(Exception e){status.setText("PDF export failed: "+e.getMessage());}}
+  @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){super.onActivityResult(requestCode,resultCode,data);if(requestCode!=CREATE_PDF||resultCode!=RESULT_OK||data==null||data.getData()==null)return;try{pad.save();int current=pageIndex;int count=Math.max(1,getPreferences(0).getInt("bookflow_notebook_page_count",1));PdfDocument pdf=new PdfDocument();float scale=Math.min(800f/Math.max(1,pad.getWidth()),550f/Math.max(1,pad.getHeight()));for(int i=0;i<count;i++){pageIndex=i;pad.load();PdfDocument.Page pg=pdf.startPage(new PdfDocument.PageInfo.Builder(842,595,i+1).create());Canvas cv=pg.getCanvas();cv.drawColor(Color.WHITE);cv.save();cv.translate(21,22);cv.scale(scale,scale);pad.draw(cv);cv.restore();pdf.finishPage(pg);}pageIndex=current;pad.load();try(OutputStream out=getContentResolver().openOutputStream(data.getData())){if(out==null)throw new Exception("Cannot open destination");pdf.writeTo(out);}pdf.close();status.setText("All "+count+" notebook pages exported ✓");}catch(Exception e){status.setText("PDF export failed: "+e.getMessage());}}
   public void onBackPressed(){pad.save();super.onBackPressed();}
 }
