@@ -24,9 +24,9 @@ jobs:
       - name: Publish direct APK download
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: bookflow-study-v2
-          name: BookFlow Study Edition
-          body: "BookFlow study build. Debug APK for Android testing."
+          tag_name: bookflow-build-${{ github.run_number }}
+          name: BookFlow Build ${{ github.run_number }}
+          body: "Automated BookFlow Android build #${{ github.run_number }} from branch bookflow-android."
           files: app/build/outputs/apk/debug/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
