@@ -16,11 +16,11 @@ import java.util.*;
 public class NotebookActivity extends Activity {
   private Pad pad; private String storeKey="bookflow_notebook"; private TextView status; private static final int CREATE_PDF=7413; private int pageIndex=0;
   int dp(float n){return (int)(n*getResources().getDisplayMetrics().density);}
-  Button tool(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(12);return b;}
+  Button tool(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(11);b.setTextColor(Color.rgb(48,62,54));android.graphics.drawable.GradientDrawable bg=new android.graphics.drawable.GradientDrawable();bg.setColor(Color.rgb(235,230,218));bg.setCornerRadius(dp(13));b.setBackground(bg);b.setPadding(dp(7),0,dp(7),0);return b;}
   public void onCreate(Bundle b){super.onCreate(b);setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);getWindow().setFlags(1024,1024);
-    LinearLayout root=new LinearLayout(this);root.setOrientation(1);root.setPadding(dp(8),dp(6),dp(8),dp(6));root.setBackgroundColor(Color.rgb(246,244,238));setContentView(root);
+    LinearLayout root=new LinearLayout(this);root.setOrientation(1);root.setPadding(dp(8),dp(6),dp(8),dp(6));root.setBackgroundColor(Color.rgb(246,244,237));setContentView(root);
     LinearLayout bar=new LinearLayout(this);bar.setGravity(Gravity.CENTER_VERTICAL);root.addView(bar,new LinearLayout.LayoutParams(-1,dp(52)));
-    TextView title=new TextView(this);title.setText("BOOKFLOW  /  NOTEBOOK");title.setTextSize(14);title.setTextColor(Color.rgb(65,57,44));title.setPadding(dp(8),0,dp(12),0);bar.addView(title,new LinearLayout.LayoutParams(0,-2,1));
+    ImageView logo=new ImageView(this);logo.setImageResource(R.drawable.bookflow_logo);bar.addView(logo,new LinearLayout.LayoutParams(dp(34),dp(34)));TextView title=new TextView(this);title.setText("  BOOKFLOW  /  NOTEBOOK");title.setTextSize(14);title.setTypeface(null,android.graphics.Typeface.BOLD);title.setTextColor(Color.rgb(35,59,53));title.setPadding(dp(8),0,dp(12),0);bar.addView(title,new LinearLayout.LayoutParams(0,-2,1));
     add(bar,"Pen",()->pad.mode="pen");add(bar,"Marker",()->pad.mode="marker");add(bar,"Eraser",()->pad.mode="eraser");add(bar,"Line",()->pad.mode="line");add(bar,"Rect",()->pad.mode="rect");add(bar,"Circle",()->pad.mode="circle");add(bar,"Triangle",()->pad.mode="triangle");add(bar,"Black",()->pad.color=Color.BLACK);add(bar,"Blue",()->pad.color=Color.rgb(35,70,150));add(bar,"Red",()->pad.color=Color.rgb(190,45,55));add(bar,"Green",()->pad.color=Color.rgb(35,130,85));add(bar,"Width",()->chooseWidth());add(bar,"Undo",()->pad.undo());add(bar,"Redo",()->pad.redo());add(bar,"Page −",()->changePage(-1));add(bar,"Page +",()->changePage(1));add(bar,"Clear",()->new AlertDialog.Builder(this).setMessage("Clear this notebook page?").setNegativeButton("Cancel",null).setPositiveButton("Clear",(d,w)->pad.clear()).show());
     Button pdf=tool("PDF ↓");bar.addView(pdf);pdf.setOnClickListener(v->exportPdf());
     Button done=tool("Done ✓");bar.addView(done);done.setOnClickListener(v->{pad.save();finish();});
@@ -31,7 +31,7 @@ public class NotebookActivity extends Activity {
   class Stroke {ArrayList<PointF> points=new ArrayList<>();int color;float width;String mode;}
   class Pad extends View{
     ArrayList<Stroke> strokes=new ArrayList<>();ArrayList<Stroke> undone=new ArrayList<>();Stroke active;String mode="pen";int color=Color.rgb(35,70,150);float penWidth=dp(3);Paint p=new Paint(3);
-    Pad(Context c){super(c);setBackgroundColor(Color.WHITE);setLayerType(View.LAYER_TYPE_SOFTWARE,null);}
+    Pad(Context c){super(c);setBackgroundColor(Color.rgb(255,254,249));setLayerType(View.LAYER_TYPE_SOFTWARE,null);}
     protected void onDraw(Canvas c){super.onDraw(c);float gap=dp(32);p.setColor(Color.rgb(226,231,235));p.setStrokeWidth(1);for(float y=gap;y<getHeight();y+=gap)c.drawLine(0,y,getWidth(),y,p);p.setColor(Color.rgb(230,190,190));c.drawLine(dp(48),0,dp(48),getHeight(),p);for(Stroke s:strokes)draw(c,s);if(active!=null)draw(c,active);}
     void draw(Canvas c,Stroke s){if(s.points.isEmpty())return;p.setColor(s.color);p.setStrokeWidth(s.width);p.setStrokeCap(Paint.Cap.ROUND);p.setStrokeJoin(Paint.Join.ROUND);p.setStyle(Paint.Style.STROKE);p.setAlpha(s.mode.equals("marker")?75:255);Path path=new Path();PointF a=s.points.get(0),z=s.points.get(s.points.size()-1);
       if(s.mode.equals("rect")){c.drawRect(a.x,a.y,z.x,z.y,p);return;}
