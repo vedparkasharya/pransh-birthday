@@ -28,15 +28,15 @@ public class SmartNotesActivity extends Activity {
   private final String STORE="bookflow_smart_notes_html";
   private static final int CREATE_PDF=7412;
   private int dp(float n){return (int)(n*getResources().getDisplayMetrics().density);}
-  private Button button(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(12);return b;}
+  private Button button(String s){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setTextSize(12);b.setTextColor(Color.rgb(50,65,56));android.graphics.drawable.GradientDrawable bg=new android.graphics.drawable.GradientDrawable();bg.setColor(Color.rgb(235,229,216));bg.setCornerRadius(dp(15));b.setBackground(bg);b.setPadding(dp(8),0,dp(8),0);return b;}
 
   @Override public void onCreate(Bundle b){
     super.onCreate(b);
     getWindow().setStatusBarColor(Color.rgb(247,245,239));
     getWindow().setNavigationBarColor(Color.rgb(247,245,239));
     LinearLayout root=new LinearLayout(this);root.setOrientation(1);root.setPadding(dp(10),dp(8),dp(10),dp(8));root.setBackgroundColor(Color.rgb(247,245,239));setContentView(root);
-    TextView title=new TextView(this);title.setText("BOOKFLOW  /  SMART NOTES");title.setTextSize(14);title.setTextColor(Color.rgb(95,78,52));root.addView(title);
-    TextView subtitle=new TextView(this);subtitle.setText("Write naturally, convert to editable English, then format your notes.");subtitle.setTextSize(12);subtitle.setTextColor(Color.DKGRAY);root.addView(subtitle);
+    LinearLayout head=new LinearLayout(this);head.setGravity(Gravity.CENTER_VERTICAL);root.addView(head);ImageView logo=new ImageView(this);logo.setImageResource(R.drawable.bookflow_logo);head.addView(logo,new LinearLayout.LayoutParams(dp(34),dp(34)));TextView title=new TextView(this);title.setText("  BOOKFLOW  /  SMART NOTES");title.setTextSize(14);title.setTypeface(null,android.graphics.Typeface.BOLD);title.setTextColor(Color.rgb(35,59,53));head.addView(title);
+    TextView subtitle=new TextView(this);subtitle.setText("Write naturally, convert to editable English, then format your notes.");subtitle.setTextSize(12);subtitle.setTextColor(Color.rgb(119,113,100));root.addView(subtitle);
     LinearLayout format=new LinearLayout(this);format.setOrientation(LinearLayout.HORIZONTAL);format.setGravity(Gravity.CENTER);root.addView(format);
     add(format,"B",()->apply(new StyleSpan(android.graphics.Typeface.BOLD)));
     add(format,"I",()->apply(new StyleSpan(android.graphics.Typeface.ITALIC)));
@@ -46,11 +46,11 @@ public class SmartNotesActivity extends Activity {
     add(format,"Blue",()->apply(new ForegroundColorSpan(Color.rgb(35,75,160))));
     add(format,"Yellow",()->apply(new BackgroundColorSpan(Color.YELLOW)));
     add(format,"• List",()->{int p=editor.getSelectionStart();editor.getText().insert(Math.max(0,p),"• ");});
-    editor=new EditText(this);editor.setGravity(Gravity.TOP|Gravity.START);editor.setTextSize(17);editor.setPadding(dp(50),dp(14),dp(14),dp(14));editor.setHint("Your recognised and typed notes appear here…");editor.setBackground(new RuledPaperDrawable());editor.setMinLines(7);editor.setLineSpacing(dp(7),1f);
+    editor=new EditText(this);editor.setGravity(Gravity.TOP|Gravity.START);editor.setTextSize(18);editor.setTextColor(Color.rgb(43,52,46));editor.setHintTextColor(Color.rgb(155,151,140));editor.setPadding(dp(50),dp(14),dp(14),dp(14));editor.setHint("Your recognised and typed notes appear here…");editor.setBackground(new RuledPaperDrawable());editor.setMinLines(7);editor.setLineSpacing(dp(7),1f);
     LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(-1,0,1);ep.topMargin=dp(8);root.addView(editor,ep);
     String saved=getPreferences(0).getString(STORE,"");if(!saved.isEmpty())editor.setText(android.text.Html.fromHtml(saved,android.text.Html.FROM_HTML_MODE_LEGACY));
     TextView handTitle=new TextView(this);handTitle.setText("HANDWRITING INPUT  ·  Write below, then tap Recognise");handTitle.setTextSize(12);handTitle.setTextColor(Color.DKGRAY);handTitle.setPadding(0,dp(8),0,dp(4));root.addView(handTitle);
-    inkCanvas=new InkCanvas(this);inkCanvas.setBackgroundColor(Color.WHITE);LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,dp(170));root.addView(inkCanvas,cp);
+    inkCanvas=new InkCanvas(this);inkCanvas.setBackground(makePaper());LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,dp(170));root.addView(inkCanvas,cp);
     LinearLayout actions=new LinearLayout(this);actions.setGravity(Gravity.CENTER);root.addView(actions);
     Button recognise=button("Recognise English");actions.addView(recognise);recognise.setOnClickListener(v->recognise());
     Button clear=button("Clear ink");actions.addView(clear);clear.setOnClickListener(v->inkCanvas.clear());
@@ -59,6 +59,7 @@ public class SmartNotesActivity extends Activity {
     status=new TextView(this);status.setText("Handwriting recognition downloads the English model once; internet may be needed.");status.setTextSize(11);status.setTextColor(Color.GRAY);root.addView(status);
     setupRecognizer();
   }
+  private android.graphics.drawable.Drawable makePaper(){android.graphics.drawable.GradientDrawable d=new android.graphics.drawable.GradientDrawable();d.setColor(Color.rgb(255,254,248));d.setCornerRadius(dp(14));d.setStroke(dp(1),Color.rgb(225,220,207));return d;}
   private void add(LinearLayout bar,String label,Runnable action){Button b=button(label);bar.addView(b,new LinearLayout.LayoutParams(0,dp(44),1));b.setOnClickListener(v->action.run());}
   private void apply(Object span){int a=editor.getSelectionStart(),z=editor.getSelectionEnd();if(a<0||z<=a){Toast.makeText(this,"Select some text first",Toast.LENGTH_SHORT).show();return;}editor.getText().setSpan(span,a,z,Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);}
   private void exportPdf(){ Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("application/pdf");i.putExtra(Intent.EXTRA_TITLE,"BookFlow-Notes.pdf");startActivityForResult(i,CREATE_PDF); }
